@@ -104,7 +104,6 @@ class MinerCoordinator(DataUpdateCoordinator):
                     pyasic.DataOptions.EXPECTED_HASHRATE,
                     pyasic.DataOptions.HASHBOARDS,
                     pyasic.DataOptions.WATTAGE,
-                    pyasic.DataOptions.WATTAGE_LIMIT,
                     pyasic.DataOptions.FANS,
                     pyasic.DataOptions.CONFIG,
                 ]
@@ -137,7 +136,6 @@ class MinerCoordinator(DataUpdateCoordinator):
                 "hashrate": hashrate,
                 "ideal_hashrate": expected_hashrate,
                 "temperature": miner_data.temperature_avg,
-                "power_limit": miner_data.wattage_limit,
                 "miner_consumption": miner_data.wattage,
                 "efficiency": miner_data.efficiency,
             },
