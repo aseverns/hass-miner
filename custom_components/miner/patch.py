@@ -1,4 +1,4 @@
-"""Path annoying home assistant dependency handling."""
+"""Patch annoying home assistant dependency handling."""
 from __future__ import annotations
 
 import os
