@@ -51,6 +51,20 @@ Works great in coordination with [ESPHome](https://www.home-assistant.io/integra
 | ----------------- | ------------------------------------ |
 | `reboot`          | Reboot a miner by IP                 |
 | `restart_backend` | Restart the backend of a miner by IP |
+| `curtail_wakeup`  | Resume mining after curtailment      |
+| `curtail_sleep`   | Stop mining due to curtailment       |
+
+## Temperature curtail automation
+
+After installing the integration, a built-in automation monitors the
+`sensor.econet_hpwh_ambient_temperature` entity every five minutes. If the
+temperature drops below **64°F**, mining resumes using the `curtail_wakeup`
+service. When the temperature rises above **70°F**, the `curtail_sleep`
+service stops mining. This automation is disabled on weekdays between **2 PM**
+and **9 PM** Eastern Time.
+
+No additional configuration is required. Simply ensure the temperature sensor
+exists in Home Assistant with the entity ID listed above.
 
 ## Installation
 

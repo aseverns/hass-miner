@@ -15,6 +15,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.event import async_track_time_interval
+from datetime import timedelta, datetime, time
+from zoneinfo import ZoneInfo
 
 from .const import CONF_IP
 from .const import DOMAIN
@@ -46,6 +49,28 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
     await async_setup_services(hass)
+
+    async def _curtail_check(now):
+        eastern = datetime.now(ZoneInfo("US/Eastern"))
+        if eastern.weekday() < 5 and time(14, 0) <= eastern.time() < time(21, 0):
+            return
+        state = hass.states.get("sensor.econet_hpwh_ambient_temperature")
+        if not state or state.state in ("unknown", "unavailable"):
+            return
+        try:
+            ambient = float(state.state)
+        except ValueError:
+            return
+        miner = m_coordinator.miner
+        if miner is None:
+            return
+        if ambient < 64:
+            await miner.resume_mining()
+        elif ambient > 70:
+            await miner.stop_mining()
+
+    unsub = async_track_time_interval(hass, _curtail_check, timedelta(minutes=5))
+    config_entry.async_on_unload(unsub)
 
     return True
 

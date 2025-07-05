@@ -12,6 +12,8 @@ from homeassistant.helpers.device_registry import async_get as async_get_device_
 from .const import DOMAIN
 from .const import SERVICE_REBOOT
 from .const import SERVICE_RESTART_BACKEND
+from .const import SERVICE_CURTAIL_WAKEUP
+from .const import SERVICE_CURTAIL_SLEEP
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,3 +53,17 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             await asyncio.gather(*[miner.restart_backend() for miner in miners])
 
     hass.services.async_register(DOMAIN, SERVICE_RESTART_BACKEND, restart_backend)
+
+    async def curtail_wakeup(call: ServiceCall) -> None:
+        miners = await get_miners(call)
+        if len(miners) > 0:
+            await asyncio.gather(*[miner.resume_mining() for miner in miners])
+
+    hass.services.async_register(DOMAIN, SERVICE_CURTAIL_WAKEUP, curtail_wakeup)
+
+    async def curtail_sleep(call: ServiceCall) -> None:
+        miners = await get_miners(call)
+        if len(miners) > 0:
+            await asyncio.gather(*[miner.stop_mining() for miner in miners])
+
+    hass.services.async_register(DOMAIN, SERVICE_CURTAIL_SLEEP, curtail_sleep)
