@@ -54,12 +54,6 @@ Works great in coordination with [ESPHome](https://www.home-assistant.io/integra
 | `curtail_wakeup`  | Resume mining after curtailment      |
 | `curtail_sleep`   | Stop mining due to curtailment       |
 
-## Manual curtail switch
-
-A `Curtail` switch is also created for each configured miner. Turning this
-switch **off** triggers the `curtail_sleep` service to stop mining, while
-turning it **on** calls `curtail_wakeup` to resume mining.
-
 ## Temperature curtail automation
 
 After installing the integration, a built-in automation monitors the
@@ -67,7 +61,11 @@ After installing the integration, a built-in automation monitors the
 temperature drops below **64°F**, mining resumes using the `curtail_wakeup`
 service. When the temperature rises above **70°F**, the `curtail_sleep`
 service stops mining. This automation is disabled on weekdays between **2 PM**
-and **9 PM** Eastern Time.
+
+and **9 PM** Eastern Time. During those hours the integration checks if your
+miner is active and will issue the `curtail_sleep` command to ensure it
+remains stopped.
+
 
 No additional configuration is required. Simply ensure the temperature sensor
 exists in Home Assistant with the entity ID listed above.

@@ -52,7 +52,13 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 
     async def _curtail_check(now):
         eastern = datetime.now(ZoneInfo("US/Eastern"))
+        miner = m_coordinator.miner
+        if miner is None:
+            return
+
         if eastern.weekday() < 5 and time(14, 0) <= eastern.time() < time(21, 0):
+            if m_coordinator.data.get("is_mining"):
+                await miner.stop_mining()
             return
         state = hass.states.get("sensor.econet_hpwh_ambient_temperature")
         if not state or state.state in ("unknown", "unavailable"):
@@ -60,9 +66,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         try:
             ambient = float(state.state)
         except ValueError:
-            return
-        miner = m_coordinator.miner
-        if miner is None:
             return
         if ambient < 64:
             await miner.resume_mining()
