@@ -60,7 +60,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             if m_coordinator.data.get("is_mining"):
                 await miner.stop_mining()
             return
-
         state = hass.states.get("sensor.econet_hpwh_ambient_temperature")
         if not state or state.state in ("unknown", "unavailable"):
             return
@@ -68,7 +67,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             ambient = float(state.state)
         except ValueError:
             return
-
         if ambient < 64:
             await miner.resume_mining()
         elif ambient > 70:

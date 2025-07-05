@@ -1,4 +1,4 @@
-"""Path annoying home assistant dependency handling."""
+"""Patch annoying home assistant dependency handling."""
 from __future__ import annotations
 
 import os
@@ -14,6 +14,7 @@ _UV_ENV_PYTHON_VARS = (
     "UV_SYSTEM_PYTHON",
     "UV_PYTHON",
 )
+
 
 # Copy-paste of home assistant core install, but pre-releases are supported
 def install_package(

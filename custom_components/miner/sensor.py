@@ -19,7 +19,6 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .const import JOULES_PER_TERA_HASH
 from .const import TERA_HASH_PER_SECOND
 from .coordinator import MinerCoordinator
 
@@ -63,6 +62,11 @@ ENTITY_DESCRIPTION_KEY_MAP: dict[str, SensorEntityDescription] = {
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    "active_preset_name": SensorEntityDescription(
+        key="Active Preset Name",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
     "board_hashrate": SensorEntityDescription(
         key="Board Hashrate",
         native_unit_of_measurement=TERA_HASH_PER_SECOND,
@@ -81,12 +85,6 @@ ENTITY_DESCRIPTION_KEY_MAP: dict[str, SensorEntityDescription] = {
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfPower.WATT,
         device_class=SensorDeviceClass.POWER,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    "efficiency": SensorEntityDescription(
-        key="Efficiency",
-        native_unit_of_measurement=JOULES_PER_TERA_HASH,
-        state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     "fan_speed": SensorEntityDescription(

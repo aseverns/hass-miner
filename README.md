@@ -61,9 +61,11 @@ After installing the integration, a built-in automation monitors the
 temperature drops below **64°F**, mining resumes using the `curtail_wakeup`
 service. When the temperature rises above **70°F**, the `curtail_sleep`
 service stops mining. This automation is disabled on weekdays between **2 PM**
+
 and **9 PM** Eastern Time. During those hours the integration checks if your
 miner is active and will issue the `curtail_sleep` command to ensure it
 remains stopped.
+
 
 No additional configuration is required. Simply ensure the temperature sensor
 exists in Home Assistant with the entity ID listed above.
