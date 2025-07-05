@@ -33,13 +33,15 @@ async def async_setup_entry(
 
     await coordinator.async_config_entry_first_refresh()
     if coordinator.miner.supports_shutdown:
-        async_add_entities(
-            [
-                MinerActiveSwitch(
-                    coordinator=coordinator,
-                )
-            ]
-        )
+        entities = [
+            MinerActiveSwitch(
+                coordinator=coordinator,
+            ),
+            MinerCurtailSwitch(
+                coordinator=coordinator,
+            ),
+        ]
+        async_add_entities(entities)
 
 
 class MinerActiveSwitch(CoordinatorEntity[MinerCoordinator], SwitchEntity):
@@ -116,3 +118,70 @@ class MinerActiveSwitch(CoordinatorEntity[MinerCoordinator], SwitchEntity):
     def available(self) -> bool:
         """Return if entity is available or not."""
         return self.coordinator.available
+
+
+class MinerCurtailSwitch(CoordinatorEntity[MinerCoordinator], SwitchEntity):
+    """Switch to manually curtail or wake miners."""
+
+    def __init__(self, coordinator: MinerCoordinator) -> None:
+        """Initialize the switch."""
+        super().__init__(coordinator=coordinator)
+        self._attr_unique_id = f"{self.coordinator.data['mac']}-curtail"
+        self._attr_is_on = self.coordinator.data["is_mining"]
+        self.updating_switch = False
+
+    @property
+    def name(self) -> str | None:
+        """Return name of the entity."""
+        return f"{self.coordinator.config_entry.title} curtail"
+
+    @property
+    def device_info(self) -> entity.DeviceInfo:
+        """Return device info."""
+        return entity.DeviceInfo(
+            identifiers={(DOMAIN, self.coordinator.data["mac"])},
+            manufacturer=self.coordinator.data["make"],
+            model=self.coordinator.data["model"],
+            sw_version=self.coordinator.data["fw_ver"],
+            name=f"{self.coordinator.config_entry.title}",
+        )
+
+    async def async_turn_on(self) -> None:
+        """Wake up mining using curtail service."""
+        miner = self.coordinator.miner
+        _LOGGER.debug(f"{self.coordinator.config_entry.title}: Curtail wakeup.")
+        if not miner.supports_shutdown:
+            raise TypeError(f"{miner}: Shutdown not supported.")
+        self._attr_is_on = True
+        await miner.resume_mining()
+        self.updating_switch = True
+        self.async_write_ha_state()
+
+    async def async_turn_off(self) -> None:
+        """Put miner to sleep using curtail service."""
+        miner = self.coordinator.miner
+        _LOGGER.debug(f"{self.coordinator.config_entry.title}: Curtail sleep.")
+        if not miner.supports_shutdown:
+            raise TypeError(f"{miner}: Shutdown not supported.")
+        self._attr_is_on = False
+        await miner.stop_mining()
+        self.updating_switch = True
+        self.async_write_ha_state()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        is_mining = self.coordinator.data["is_mining"]
+        if is_mining is not None:
+            if self.updating_switch:
+                if is_mining == self._attr_is_on:
+                    self.updating_switch = False
+            if not self.updating_switch:
+                self._attr_is_on = is_mining
+
+        super()._handle_coordinator_update()
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available or not."""
+        return self.coordinator.available
+
