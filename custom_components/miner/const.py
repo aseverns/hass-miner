@@ -12,6 +12,8 @@ CONF_WEB_USERNAME = "web_username"
 
 SERVICE_REBOOT = "reboot"
 SERVICE_RESTART_BACKEND = "restart_backend"
+SERVICE_CURTAIL_WAKEUP = "curtail_wakeup"
+SERVICE_CURTAIL_SLEEP = "curtail_sleep"
 
 TERA_HASH_PER_SECOND = "TH/s"
 JOULES_PER_TERA_HASH = "J/TH"
