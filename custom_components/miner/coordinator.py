@@ -51,7 +51,6 @@ DEFAULT_DATA = {
         "temperature": 0,
         "power_limit": 0,
         "miner_consumption": 0,
-        "efficiency": 0.0,
     },
     "board_sensors": {},
     "fan_sensors": {},
@@ -195,7 +194,6 @@ class MinerCoordinator(DataUpdateCoordinator):
                 "active_preset_name": miner_data.config.mining_mode.active_preset.name,
                 "temperature": miner_data.temperature_avg,
                 "miner_consumption": miner_data.wattage,
-                "efficiency": miner_data.efficiency_fract,
             },
             "board_sensors": {
                 board.slot: {
