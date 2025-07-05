@@ -54,6 +54,12 @@ Works great in coordination with [ESPHome](https://www.home-assistant.io/integra
 | `curtail_wakeup`  | Resume mining after curtailment      |
 | `curtail_sleep`   | Stop mining due to curtailment       |
 
+## Manual curtail switch
+
+A `Curtail` switch is also created for each configured miner. Turning this
+switch **off** triggers the `curtail_sleep` service to stop mining, while
+turning it **on** calls `curtail_wakeup` to resume mining.
+
 ## Temperature curtail automation
 
 After installing the integration, a built-in automation monitors the
