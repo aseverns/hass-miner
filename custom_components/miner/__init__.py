@@ -67,7 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             ambient = float(state.state)
         except ValueError:
             return
-        if ambient < 64:
+        if ambient < 65:
             await miner.resume_mining()
         elif ambient > 70:
             await miner.stop_mining()
