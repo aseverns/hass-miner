@@ -19,8 +19,12 @@ from homeassistant.helpers.event import async_track_time_interval
 from datetime import timedelta, datetime, time
 from zoneinfo import ZoneInfo
 
-from .const import CONF_IP
-from .const import DOMAIN
+from .const import (
+    AMBIENT_TEMP_RESUME_F,
+    AMBIENT_TEMP_STOP_F,
+    CONF_IP,
+    DOMAIN,
+)
 from .coordinator import MinerCoordinator
 from .services import async_setup_services
 
@@ -67,9 +71,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             ambient = float(state.state)
         except ValueError:
             return
-        if ambient < 65:
+        if ambient < AMBIENT_TEMP_RESUME_F:
             await miner.resume_mining()
-        elif ambient > 70:
+        elif ambient > AMBIENT_TEMP_STOP_F:
             await miner.stop_mining()
 
     unsub = async_track_time_interval(hass, _curtail_check, timedelta(minutes=5))
