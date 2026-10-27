@@ -19,6 +19,7 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+from .const import JOULES_PER_TERA_HASH
 from .const import TERA_HASH_PER_SECOND
 from .coordinator import MinerCoordinator
 
@@ -87,6 +88,12 @@ ENTITY_DESCRIPTION_KEY_MAP: dict[str, SensorEntityDescription] = {
         device_class=SensorDeviceClass.POWER,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    "efficiency": SensorEntityDescription(
+        key="Efficiency",
+        native_unit_of_measurement=JOULES_PER_TERA_HASH,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
     "fan_speed": SensorEntityDescription(
         key="Fan Speed",
         native_unit_of_measurement=REVOLUTIONS_PER_MINUTE,
@@ -144,10 +151,10 @@ async def async_setup_entry(
     sensors = []
     for s in coordinator.data["miner_sensors"]:
         sensors.append(_create_miner_entity(s))
-    for board in range(coordinator.miner.expected_hashboards):
+    for board in range(coordinator.miner.expected_hashboards or 3):
         for s in ["board_temperature", "chip_temperature", "board_hashrate"]:
             sensors.append(_create_board_entity(board, s))
-    for fan in range(coordinator.miner.expected_fans):
+    for fan in range(coordinator.miner.expected_fans or 4):
         for s in ["fan_speed"]:
             sensors.append(_create_fan_entity(fan, s))
     async_add_entities(sensors)

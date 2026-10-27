@@ -1,43 +1,65 @@
 """The Miner integration."""
 from __future__ import annotations
 
-
-try:
-    import pyasic
-except ImportError:
-    from .patch import install_package
-    from .const import PYASIC_VERSION
-
-    install_package(f"pyasic=={PYASIC_VERSION}")
-    import pyasic
+import sys
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.event import async_track_time_interval
-from datetime import timedelta, datetime, time
-from zoneinfo import ZoneInfo
 
-from .const import (
-    AMBIENT_TEMP_RESUME_F,
-    AMBIENT_TEMP_STOP_F,
-    CONF_IP,
-    DOMAIN,
-)
-from .coordinator import MinerCoordinator
-from .services import async_setup_services
+from .const import CONF_IP
+from .const import DOMAIN
+from .const import PYASIC_VERSION
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.SWITCH,
     Platform.NUMBER,
-    Platform.SELECT,
+    # Platform.SELECT,  # TODO: select.py needs proper implementation
 ]
+
+
+def _ensure_pyasic():
+    """Ensure pyasic is installed and imported (runs in executor)."""
+
+    def try_import():
+        try:
+            from importlib.metadata import version
+            import pyasic
+            if not hasattr(pyasic, 'get_miner'):
+                raise ImportError("pyasic module incomplete")
+            if version("pyasic") != PYASIC_VERSION:
+                raise ImportError("Version mismatch")
+            return pyasic
+        except Exception:
+            return None
+
+    pyasic = try_import()
+    if pyasic:
+        return pyasic
+
+    # Need to install/reinstall
+    from .patch import install_package
+    install_package(f"pyasic=={PYASIC_VERSION}", force_reinstall=True)
+
+    # Clear any cached broken imports
+    for mod_name in list(sys.modules.keys()):
+        if mod_name.startswith('pyasic'):
+            del sys.modules[mod_name]
+
+    import pyasic
+    return pyasic
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up Miner from a config entry."""
+    # Import pyasic in executor to avoid blocking the event loop
+    pyasic = await hass.async_add_executor_job(_ensure_pyasic)
+
+    # Import coordinator and services AFTER pyasic is installed
+    from .coordinator import MinerCoordinator
+    from .services import async_setup_services
 
     miner_ip = config_entry.data[CONF_IP]
     miner = await pyasic.get_miner(miner_ip)
@@ -53,31 +75,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
 
     await async_setup_services(hass)
-
-    async def _curtail_check(now):
-        eastern = datetime.now(ZoneInfo("US/Eastern"))
-        miner = m_coordinator.miner
-        if miner is None:
-            return
-
-        if eastern.weekday() < 5 and time(14, 0) <= eastern.time() < time(21, 0):
-            if m_coordinator.data.get("is_mining"):
-                await miner.stop_mining()
-            return
-        state = hass.states.get("sensor.econet_hpwh_ambient_temperature")
-        if not state or state.state in ("unknown", "unavailable"):
-            return
-        try:
-            ambient = float(state.state)
-        except ValueError:
-            return
-        if ambient < AMBIENT_TEMP_RESUME_F:
-            await miner.resume_mining()
-        elif ambient > AMBIENT_TEMP_STOP_F:
-            await miner.stop_mining()
-
-    unsub = async_track_time_interval(hass, _curtail_check, timedelta(minutes=5))
-    config_entry.async_on_unload(unsub)
 
     return True
 
