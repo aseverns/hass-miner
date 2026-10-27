@@ -205,9 +205,19 @@ class MinerCoordinator(DataUpdateCoordinator):
         except AttributeError:
             active_preset = None
 
+        mac = miner_data.mac
+        if mac is None:
+            # pyasic's LuxOS backend returns None for the MAC (stray early return in
+            # _get_mac); fall back to the MACAddr reported by the LuxOS config command.
+            try:
+                rpc_config = await self.miner.rpc.config()
+                mac = rpc_config["CONFIG"][0]["MACAddr"].upper()
+            except Exception:  # noqa: BLE001 - any failure just keeps mac=None
+                mac = None
+
         data = {
             "hostname": miner_data.hostname,
-            "mac": miner_data.mac,
+            "mac": mac,
             "make": miner_data.make,
             "model": miner_data.model,
             "ip": self.miner.ip,
