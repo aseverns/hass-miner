@@ -206,14 +206,20 @@ class MinerCoordinator(DataUpdateCoordinator):
             active_preset = None
 
         mac = miner_data.mac
+        is_mining = miner_data.is_mining
         if mac is None:
             # pyasic's LuxOS backend returns None for the MAC (stray early return in
             # _get_mac); fall back to the MACAddr reported by the LuxOS config command.
+            # The same config call tells us whether the miner is curtailed (asleep),
+            # which pyasic also does not report for LuxOS, so use it for is_mining.
             try:
                 rpc_config = await self.miner.rpc.config()
-                mac = rpc_config["CONFIG"][0]["MACAddr"].upper()
-            except Exception:  # noqa: BLE001 - any failure just keeps mac=None
-                mac = None
+                cfg = rpc_config["CONFIG"][0]
+                mac = cfg["MACAddr"].upper()
+                if "CurtailMode" in cfg:
+                    is_mining = cfg["CurtailMode"] != "Sleep"
+            except Exception:  # noqa: BLE001 - any failure keeps pyasic's values
+                pass
 
         data = {
             "hostname": miner_data.hostname,
@@ -221,7 +227,7 @@ class MinerCoordinator(DataUpdateCoordinator):
             "make": miner_data.make,
             "model": miner_data.model,
             "ip": self.miner.ip,
-            "is_mining": miner_data.is_mining,
+            "is_mining": is_mining,
             "fw_ver": miner_data.fw_ver,
             "miner_sensors": {
                 "hashrate": hashrate,
